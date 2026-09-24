@@ -25,6 +25,7 @@ import pisi.util
 import pisi.pgraph as pgraph
 import pisi.db.packagedb
 import pisi.db.repodb
+import pisi.db.filesdb
 import pisi.db.filesldb
 import pisi.db.installdb
 import pisi.db.historydb
@@ -401,9 +402,10 @@ def search_file(term):
 
     >>> [("kvm", (["lib/modules/2.6.18.8-86/extra/kvm-amd.ko","lib/modules/2.6.18.8-86/extra/kvm-intel.ko"])),]
     """
+    filesdb = pisi.db.filesdb.FilesDB()
     if term.startswith("/"): # FIXME: why? why?
         term = term[1:]
-    return ctx.filesdb.search_file(term)
+    return filesdb.search_file(term)
 
 def fetch(packages=[], path=os.path.curdir):
     """
