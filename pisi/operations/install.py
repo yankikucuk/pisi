@@ -27,6 +27,32 @@ import pisi.pgraph as pgraph
 import pisi.ui as ui
 import pisi.db
 
+def reorder_for_glibc_priority(order):
+    """GLIBC ve glibc-devel'i EN SONA al, glibc-devel glibc'den SONRA gelsin"""
+    try:
+        glibc_packages = ["glibc", "glibc-devel"]
+
+        # Yeni liste oluştur
+        new_order = [pkg for pkg in order if pkg not in glibc_packages]
+        found_glibc = "glibc" in order
+        found_glibc_devel = "glibc-devel" in order
+
+        if found_glibc or found_glibc_devel:
+            # Glibc paketlerini sona ekle (önce glibc, sonra glibc-devel)
+            if found_glibc:
+                new_order.append("glibc")
+            if found_glibc_devel:
+                new_order.append("glibc-devel")
+
+            ctx.ui.debug("Reordered glibc packages to the end: glibc=%s, glibc-devel=%s" % (found_glibc, found_glibc_devel))
+
+        return new_order
+
+    except Exception as e:
+        # Hata olursa orijinal listeyi döndür
+        ctx.ui.debug("Error in glibc reordering: %s" % str(e))
+        return order
+
 def install_pkg_names(A, reinstall = False, extra = False):
     """This is the real thing. It installs packages from
     the repository, trying to perform a minimum number of
@@ -61,11 +87,17 @@ def install_pkg_names(A, reinstall = False, extra = False):
         G_f = None
         order = list(A)
 
+    # GLIBC ÖNCELİĞİ - EN SONA al
+    order = reorder_for_glibc_priority(order)
+
     componentdb = pisi.db.componentdb.ComponentDB()
 
     # Bug 4211
     if componentdb.has_component('system.base'):
         order = operations.helper.reorder_base_packages(order)
+
+    # GLIBC ÖNCELİĞİ - system.base düzenlemesinden sonra tekrar kontrol
+    order = reorder_for_glibc_priority(order)
 
     if len(order) > 1:
         ctx.ui.info(util.colorize(_("Following packages will be installed:"), "brightblue"))
@@ -251,11 +283,19 @@ def install_pkg_files(package_URIs, reinstall = False):
     if ctx.config.get_option('debug'):
         G_f.write_graphviz(sys.stdout)
     order = G_f.topological_sort()
+    
+    # GLIBC ÖNCELİĞİ - PAKET DOSYALARI İÇİN (EN SONA al)
+    order = reorder_for_glibc_priority(order)
+    
     if not ctx.get_option('ignore_package_conflicts'):
         conflicts = operations.helper.check_conflicts(order, packagedb)
         if conflicts:
             operations.remove.remove_conflicting_packages(conflicts)
     order.reverse()
+    
+    # GLIBC ÖNCELİĞİ - ters çevirdikten sonra tekrar kontrol (EN SONA al)
+    order = reorder_for_glibc_priority(order)
+    
     ctx.ui.info(_('Installation order: ') + util.strlist(order) )
 
     if ctx.get_option('dry_run'):
@@ -300,4 +340,8 @@ def plan_install_pkg_names(A):
         G_f.write_graphviz(sys.stdout)
     order = G_f.topological_sort()
     order.reverse()
+    
+    # GLIBC ÖNCELİĞİ - plan_install_pkg_names için (EN SONA al)
+    order = reorder_for_glibc_priority(order)
+    
     return G_f, order

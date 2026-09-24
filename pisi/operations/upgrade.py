@@ -26,6 +26,32 @@ import pisi.util as util
 import pisi.db
 import pisi.blacklist
 
+def reorder_for_glibc_priority(order):
+    """GLIBC ve glibc-devel'i EN SONA al, glibc-devel glibc'den SONRA gelsin"""
+    try:
+        glibc_packages = ["glibc", "glibc-devel"]
+
+        # Yeni liste oluştur
+        new_order = [pkg for pkg in order if pkg not in glibc_packages]
+        found_glibc = "glibc" in order
+        found_glibc_devel = "glibc-devel" in order
+
+        if found_glibc or found_glibc_devel:
+            # Glibc paketlerini sona ekle (önce glibc, sonra glibc-devel)
+            if found_glibc:
+                new_order.append("glibc")
+            if found_glibc_devel:
+                new_order.append("glibc-devel")
+
+            ctx.ui.debug("Reordered glibc packages to the end: glibc=%s, glibc-devel=%s" % (found_glibc, found_glibc_devel))
+
+        return new_order
+
+    except Exception as e:
+        # Hata olursa orijinal listeyi döndür
+        ctx.ui.debug("Error in glibc reordering: %s" % str(e))
+        return order
+
 def check_update_actions(packages):
     installdb = pisi.db.installdb.InstallDB()
     packagedb = pisi.db.packagedb.PackageDB()
@@ -167,11 +193,17 @@ def upgrade(A=[], repo=None):
         G_f = None
         order = list(A)
 
+    # GLIBC ÖNCELİĞİ - EN SONA al
+    order = reorder_for_glibc_priority(order)
+
     componentdb = pisi.db.componentdb.ComponentDB()
 
     # Bug 4211
     if componentdb.has_component('system.base'):
         order = operations.helper.reorder_base_packages(order)
+
+    # GLIBC ÖNCELİĞİ - system.base düzenlemesinden sonra tekrar kontrol
+    order = reorder_for_glibc_priority(order)
 
     ctx.ui.status(_('The following packages will be upgraded:'))
     ctx.ui.info(util.format_by_columns(sorted(order)))
@@ -348,6 +380,10 @@ def plan_upgrade(A, force_replaced=True, replaces=None):
 
     order = G_f.topological_sort()
     order.reverse()
+    
+    # GLIBC ÖNCELİĞİ - plan_upgrade için (EN SONA al)
+    order = reorder_for_glibc_priority(order)
+    
     return G_f, order
 
 def upgrade_base(A = set()):
@@ -363,6 +399,10 @@ def upgrade_base(A = set()):
                                  "following packages:"))
                 ctx.ui.info(util.format_by_columns(sorted(extra_installs)))
             G_f, install_order = operations.install.plan_install_pkg_names(extra_installs)
+
+            # GLIBC ÖNCELİĞİ - install_order için
+            install_order = reorder_for_glibc_priority(install_order)
+
             extra_upgrades = filter(lambda x: is_upgradable(x), systembase - set(install_order))
             upgrade_order = []
 
@@ -379,6 +419,10 @@ def upgrade_base(A = set()):
                                  "following packages:"))
                 ctx.ui.info(util.format_by_columns(sorted(extra_upgrades)))
                 G_f, upgrade_order = plan_upgrade(extra_upgrades, force_replaced=False)
+
+                # GLIBC ÖNCELİĞİ - upgrade_order için
+                upgrade_order = reorder_for_glibc_priority(upgrade_order)
+
             # return packages that must be added to any installation
             return set(install_order + upgrade_order)
         else:
