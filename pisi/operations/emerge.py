@@ -23,12 +23,34 @@ import pisi.util as util
 import pisi.atomicoperations as atomicoperations
 import pisi.ui as ui
 import pisi.db
+import pisi.db.sourcedb
+import pisi.archinfo
+
+def filter_excluded_architecture(A):
+    """Drop source packages whose <ExcludeArch> lists this architecture.
+
+    A component emerge (e.g. "kernel.drivers") would otherwise stop at the
+    first x86-only module on aarch64; excluded sources are reported and
+    skipped instead, the same way the farm skips them when building.
+    """
+    architecture = ctx.config.values.general.architecture
+    sourcedb = pisi.db.sourcedb.SourceDB()
+    kept = set()
+    for name in A:
+        if sourcedb.has_spec(name):
+            spec = sourcedb.get_spec(name)
+            if pisi.archinfo.excluded(architecture, spec.source.excludeArch):
+                ctx.ui.info(_("Skipping %s: excluded for %s") % (name, architecture))
+                continue
+        kept.add(name)
+    return kept
 
 def emerge(A):
 
     # A was a list, remove duplicates and expand components
     A = [str(x) for x in A]
     A_0 = A = pisi.operations.helper.expand_src_components(set(A))
+    A_0 = A = filter_excluded_architecture(A)
     ctx.ui.debug('A = %s' % str(A))
 
     if len(A)==0:
