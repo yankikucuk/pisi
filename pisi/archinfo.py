@@ -71,9 +71,12 @@ class ArchInfo(object):
 # Build types that only make sense on some architectures. Any other value
 # of <Package buildType="..."> is a recipe's own extra pass and is built on
 # every architecture, as before.
-#   emul32: 32-bit multilib libraries next to the 64-bit ones (x86_64)
-#   pae:    32-bit kernel with physical address extension (i686)
-ARCHITECTURE_BOUND_BUILD_TYPES = ("emul32", "pae")
+#   emul32:  32-bit multilib libraries next to the 64-bit ones (x86_64)
+#   _emul32: the same, for recipes that set up the 32-bit environment
+#            themselves instead of using PiSi's emul32 handling (openssl,
+#            ncurses)
+#   pae:     32-bit kernel with physical address extension (i686)
+ARCHITECTURE_BOUND_BUILD_TYPES = ("emul32", "_emul32", "pae")
 
 _COMMON_FLAGS = "-O2 -pipe -fstack-protector -D_FORTIFY_SOURCE=2"
 
@@ -86,7 +89,7 @@ ARCHITECTURES = {
         kernel_arch="x86_64",
         kernel_image="arch/x86/boot/bzImage",
         # 32-bit userland libraries next to the 64-bit ones (multilib)
-        build_types=("emul32",),
+        build_types=("emul32", "_emul32"),
         multilib_dir="lib32"),
 
     "i686": ArchInfo(

@@ -53,6 +53,9 @@ class ArchInfoTestCase(unittest.TestCase):
         self.assertTrue(archinfo.get("x86_64").supports_build_type("emul32"))
         self.assertFalse(archinfo.get("aarch64").supports_build_type("emul32"))
         self.assertFalse(archinfo.get("i686").supports_build_type("emul32"))
+        # the variant for recipes with their own 32-bit setup is bound too
+        self.assertTrue(archinfo.get("x86_64").supports_build_type("_emul32"))
+        self.assertFalse(archinfo.get("aarch64").supports_build_type("_emul32"))
         for name in archinfo.ARCHITECTURES:
             self.assertTrue(archinfo.get(name).supports_build_type(""))
 
