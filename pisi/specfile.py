@@ -154,16 +154,34 @@ class ComarProvide:
 class Archive:
     s_uri = [autoxml.String, autoxml.mandatory]
     a_type = [autoxml.String, autoxml.optional]
-    a_sha1sum = [autoxml.String, autoxml.mandatory]
+    # SHA-1 is no longer collision resistant; recipes should give sha256sum.
+    # Existing recipes only carry sha1sum, so both are accepted, at least
+    # one is required, and every hash that is given has to match.
+    a_sha1sum = [autoxml.String, autoxml.optional]
+    a_sha256sum = [autoxml.String, autoxml.optional]
     a_target = [autoxml.String, autoxml.optional]
     a_name = [autoxml.String, autoxml.optional]
 
     def decode_hook(self, node, errs, where):
         if not self.name:
             self.name = os.path.basename(self.uri)
+        if not self.sha1sum and not self.sha256sum:
+            errs.append(where + _(": Archive %s has neither sha1sum nor "
+                                  "sha256sum") % self.uri)
+
+    def hashes(self):
+        """(algorithm, expected digest) pairs that the archive must match."""
+        pairs = []
+        if self.sha256sum:
+            pairs.append(("sha256", self.sha256sum))
+        if self.sha1sum:
+            pairs.append(("sha1", self.sha1sum))
+        return pairs
 
     def __str__(self):
-        s = _('URI: %s, type: %s, sha1sum: %s') % (self.uri, self.type, self.sha1sum)
+        hashes = ", ".join("%s: %s" % (algorithm, digest)
+                           for algorithm, digest in self.hashes())
+        s = _('URI: %s, type: %s, %s') % (self.uri, self.type, hashes)
         return s
 
 class Source:

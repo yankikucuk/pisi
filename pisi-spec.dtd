@@ -47,7 +47,9 @@
 <!ATTLIST Description xml:lang CDATA #IMPLIED>
 
 <!ELEMENT Archive (#PCDATA)>
-<!ATTLIST Archive sha1sum CDATA #REQUIRED>
+<!-- at least one of sha1sum and sha256sum is required; sha256sum is preferred -->
+<!ATTLIST Archive sha1sum CDATA #IMPLIED>
+<!ATTLIST Archive sha256sum CDATA #IMPLIED>
 <!-- NOTE: we can limit possible types here to the ones that pisi know -->
 <!ATTLIST Archive type CDATA #REQUIRED>
 <!ATTLIST Archive target CDATA #IMPLIED>
