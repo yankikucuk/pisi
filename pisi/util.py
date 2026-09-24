@@ -451,15 +451,26 @@ def get_file_hashes(top, excludePrefix=None, removePrefix=None):
             if is_included(root):
                 yield calculate_hash(root)
 
-def check_file_hash(filename, hash):
-    """Check the file's integrity with a given hash."""
-    return sha1_file(filename) == hash
+def check_file_hash(filename, hash, algorithm="sha1"):
+    """Check the file's integrity with a given hash.
+
+    algorithm is "sha1" (the historical default) or "sha256".
+    """
+    return hash_file(filename, algorithm) == hash
 
 def sha1_file(filename):
     """Calculate sha1 hash of file."""
+    return hash_file(filename, "sha1")
+
+def sha256_file(filename):
+    """Calculate sha256 hash of file."""
+    return hash_file(filename, "sha256")
+
+def hash_file(filename, algorithm):
+    """Calculate the hex digest of a file with a hashlib algorithm name."""
     # Broken links can cause problem!
     try:
-        m = hashlib.sha1()
+        m = hashlib.new(algorithm)
         f = open(filename, 'rb')
         while True:
             # 256 KB seems ideal for speed/memory tradeoff
@@ -480,7 +491,7 @@ def sha1_file(filename):
             # Permission denied, the file doesn't have read permissions, skip
             raise FilePermissionDeniedError(_("You don't have necessary read permissions"))
         else:
-            raise FileError(_("Cannot calculate SHA1 hash of %s") % filename)
+            raise FileError(_("Cannot calculate %s hash of %s") % (algorithm.upper(), filename))
 
 def sha1_data(data):
     """Calculate sha1 hash of given data."""

@@ -1321,7 +1321,16 @@
     <!-- attlist.Archive -->
     <define name="attlist.Archive" combine="interleave">
         <group>
-            <attribute name="sha1sum"/>
+            <!-- at least one hash; sha256sum is preferred, sha1sum is kept
+                 for existing recipes -->
+            <choice>
+                <attribute name="sha1sum"/>
+                <attribute name="sha256sum"/>
+                <group>
+                    <attribute name="sha1sum"/>
+                    <attribute name="sha256sum"/>
+                </group>
+            </choice>
             <optional>
                 <attribute name="type">
                     <choice>

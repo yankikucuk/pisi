@@ -99,12 +99,19 @@ class SourceArchive:
 
         raise pisi.fetcher.FetchError(_('Could not fetch source from %s mirrors.') % name);
 
+    def hashes_match(self):
+        """True when the archive matches every hash given in pspec.xml."""
+        for algorithm, digest in self.archive.hashes():
+            if not util.check_file_hash(self.archiveFile, digest, algorithm):
+                return False
+        return True
+
     def is_cached(self, interactive=True):
         if not os.access(self.archiveFile, os.R_OK):
             return False
 
         # check hash
-        if util.check_file_hash(self.archiveFile, self.archive.sha1sum):
+        if self.hashes_match():
             if interactive:
                 ctx.ui.info(_('%s [cached]') % self.archive.name)
             return True
@@ -114,7 +121,7 @@ class SourceArchive:
     def unpack(self, target_dir, clean_dir=True):
 
         # check archive file's integrity
-        if not util.check_file_hash(self.archiveFile, self.archive.sha1sum):
+        if not self.hashes_match():
             raise Error, _("unpack: check_file_hash failed")
 
         try:
