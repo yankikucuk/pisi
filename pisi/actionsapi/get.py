@@ -19,6 +19,7 @@ _ = __trans.ugettext
 
 # PiSi Modules
 import pisi.actionsapi
+import pisi.archinfo
 import pisi.context as ctx
 
 # ActionsAPI Modules
@@ -100,7 +101,33 @@ def srcDIR():
 # Build Related Functions
 
 def ARCH():
+    """Canonical architecture name from pisi.conf: x86_64, i686 or aarch64."""
     return generals.architecture
+
+def ARCHINFO():
+    """Everything PiSi knows about the target architecture (pisi/archinfo.py)."""
+    return pisi.archinfo.get(generals.architecture)
+
+def isX86_64():
+    return pisi.archinfo.same(ARCH(), "x86_64")
+
+def isI686():
+    return pisi.archinfo.same(ARCH(), "i686")
+
+def isAARCH64():
+    return pisi.archinfo.same(ARCH(), "aarch64")
+
+def isX86():
+    """True on any x86 flavour (x86_64 or i686), e.g. for x86-only assembly."""
+    return isX86_64() or isI686()
+
+def kernelARCH():
+    """Value for the kernel build system's ARCH= variable."""
+    return ARCHINFO().kernel_arch
+
+def multilibDIR():
+    """Directory name for 32-bit libraries on multilib systems (lib32), or None."""
+    return ARCHINFO().multilib_dir
 
 def HOST():
     return env.host
