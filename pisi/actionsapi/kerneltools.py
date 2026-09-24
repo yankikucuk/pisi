@@ -71,8 +71,8 @@ def __getModuleFlavour():
 
 
 def __getKernelARCH():
-    """i386 is relevant for our i686 architecture."""
-    return get.ARCH().replace("i686", "i386")
+    """ARCH= value of the kernel build system (x86_64, i386, arm64)."""
+    return get.kernelARCH()
 
 
 def __getSuffix():
@@ -171,8 +171,9 @@ def install():
     # Dump kernel version under /etc/kernel
     dumpVersion()
 
-    # Install kernel image
-    pisitools.insinto("/boot/", "arch/x86/boot/bzImage", "kernel-%s" % suffix)
+    # Install kernel image; its location in the tree depends on the
+    # architecture (bzImage on x86, the compressed EFI-stub Image on arm64)
+    pisitools.insinto("/boot/", get.ARCHINFO().kernel_image, "kernel-%s" % suffix)
 
     # Install the modules
     # mod-fw= avoids firmwares from installing
