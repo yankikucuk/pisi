@@ -29,6 +29,7 @@ import pisi.specfile
 import pisi.util as util
 import pisi.file
 import pisi.context as ctx
+import pisi.archinfo
 import pisi.dependency as dependency
 import pisi.api
 import pisi.sourcearchive
@@ -318,7 +319,8 @@ class Builder:
         """Build the package in one shot."""
 
         architecture = ctx.config.values.general.architecture
-        if architecture in self.spec.source.excludeArch:
+        # Aliases count too: <ExcludeArch>arm64</ExcludeArch> excludes aarch64.
+        if pisi.archinfo.excluded(architecture, self.spec.source.excludeArch):
             raise ExcludedArchitectureException(
                     _("pspec.xml avoids this package from building for '%s'")
                     % architecture)
@@ -358,12 +360,22 @@ class Builder:
     def get_build_types(self):
         ignored_build_types = \
                 ctx.config.values.build.ignored_build_types.split(",")
+        arch = pisi.archinfo.get(ctx.config.values.general.architecture)
         build_types = [""]
         packages = []
 
         for package in self.spec.packages:
             if package.buildType:
                 if package.buildType in ignored_build_types:
+                    continue
+
+                # e.g. emul32 (32-bit multilib) only exists on x86_64; on
+                # other architectures those packages are simply not built,
+                # so recipes need no per-architecture conditionals for it.
+                if not arch.supports_build_type(package.buildType):
+                    ctx.ui.info(_("Skipping %s: build type '%s' is not "
+                                  "supported on %s") % (package.name,
+                                  package.buildType, arch.name))
                     continue
 
                 if package.buildType not in build_types:

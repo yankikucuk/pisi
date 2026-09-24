@@ -20,6 +20,7 @@ _ = __trans.ugettext
 
 import pisi
 import pisi.context as ctx
+import pisi.archinfo
 import pisi.util as util
 import pisi.atomicoperations as atomicoperations
 import pisi.operations as operations
@@ -212,7 +213,8 @@ def install_pkg_files(package_URIs, reinstall = False):
                 raise Exception(_('Package %s is not compatible with your distribution release %s %s.') \
                         % (x, ctx.config.values.general.distribution, \
                         ctx.config.values.general.distribution_release))
-            if pkg.architecture != ctx.config.values.general.architecture:
+            if not pisi.archinfo.same(pkg.architecture,
+                                      ctx.config.values.general.architecture):
                 raise Exception(_('Package %s (%s) is not compatible with your %s architecture.') \
                         % (x, pkg.architecture, ctx.config.values.general.architecture))
 
