@@ -23,12 +23,12 @@
 #bandwidth_limit = 0
 #
 #[build]
-#host = i686-pc-linux-gnu
+#host = x86_64-pc-linux-gnu   (default: from pisi/archinfo.py for this machine)
 #generateDebug = False
 #enableSandbox = False
 #jobs = "-j3"
-#CFLAGS= -mtune=generic -march=i686 -O2 -pipe -fomit-frame-pointer -fstack-protector -D_FORTIFY_SOURCE=2
-#CXXFLAGS= -mtune=generic -march=i686 -O2 -pipe -fomit-frame-pointer -fstack-protector -D_FORTIFY_SOURCE=2
+#CFLAGS= -mtune=generic -march=x86-64 -O2 -pipe -fstack-protector -D_FORTIFY_SOURCE=2
+#CXXFLAGS= -mtune=generic -march=x86-64 -O2 -pipe -fstack-protector -D_FORTIFY_SOURCE=2
 #LDFLAGS= -Wl,-O1 -Wl,-z,relro -Wl,--hash-style=gnu -Wl,--as-needed -Wl,--sort-common
 #buildhelper = None / ccache / icecream
 #compressionlevel = 1
@@ -57,6 +57,11 @@ __trans = gettext.translation('pisi', fallback=True)
 _ = __trans.ugettext
 
 import pisi
+import pisi.archinfo
+
+# Defaults that depend on the architecture come from the architecture table,
+# for the machine PiSi runs on. An explicit value in pisi.conf still wins.
+_machine = pisi.archinfo.get(pisi.archinfo.machine())
 
 class Error(pisi.Error):
     pass
@@ -68,7 +73,7 @@ class GeneralDefaults:
     distribution = "Pardus"
     distribution_release = "2009"
     distribution_id = "p9"
-    architecture = "i686"
+    architecture = _machine.name
     http_proxy = os.getenv("HTTP_PROXY") or None
     https_proxy = os.getenv("HTTPS_PROXY") or None
     ftp_proxy = os.getenv("FTP_PROXY") or None
@@ -81,12 +86,12 @@ class GeneralDefaults:
 class BuildDefaults:
     """Default values for [build] section"""
     build_host = "localhost"
-    host = "i686-pc-linux-gnu"
+    host = _machine.host
     jobs = "-j3"
     generateDebug = False
     enableSandbox = True
-    cflags = "-mtune=generic -march=i686 -O2 -pipe -fomit-frame-pointer -fstack-protector -D_FORTIFY_SOURCE=2"
-    cxxflags = "-mtune=generic -march=i686 -O2 -pipe -fomit-frame-pointer -fstack-protector -D_FORTIFY_SOURCE=2"
+    cflags = _machine.cflags
+    cxxflags = _machine.cflags
     ldflags = "-Wl,-O1 -Wl,-z,relro -Wl,--hash-style=gnu -Wl,--as-needed -Wl,--sort-common"
     buildhelper = None
     compressionlevel = 1
