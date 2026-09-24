@@ -182,7 +182,8 @@ def install():
                          "DEPMOD=/bin/true modules_install mod-fw=")
 
     # Remove symlinks first
-    pisitools.remove("/lib/modules/%s/source" % suffix)
+    # kernel 6.0 da kapatıldı line 186
+    # pisitools.remove("/lib/modules/%s/source" % suffix)
     pisitools.remove("/lib/modules/%s/build" % suffix)
 
     # Install Module.symvers and System.map here too
