@@ -72,7 +72,7 @@ def install(parameters = 'install'):
         if system('make %s' % parameters):
             raise InstallError, _('Make failed.')
     else:
-        if system('perl Build install'):
+        if system('perl Build install %s' % parameters):
             raise MakeError, _('perl install failed.')
 
     removePacklist()
