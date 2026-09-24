@@ -1,0 +1,134 @@
+# -*- coding: utf-8 -*-
+
+import os
+
+import gettext
+
+import pisi.actionsapi
+import pisi.context as ctx
+from pisi.actionsapi import get
+from pisi.actionsapi.shelltools import system
+
+__trans = gettext.translation('pisi', fallback=True)
+_ = __trans.ugettext
+
+
+class ConfigureError(pisi.actionsapi.Error):
+    def __init__(self, value=''):
+        pisi.actionsapi.Error.__init__(self, value)
+        self.value = value
+        ctx.ui.error(value)
+
+
+class CompileError(pisi.actionsapi.Error):
+    def __init__(self, value=''):
+        pisi.actionsapi.Error.__init__(self, value)
+        self.value = value
+        ctx.ui.error(value)
+
+
+class InstallError(pisi.actionsapi.Error):
+    def __init__(self, value=''):
+        pisi.actionsapi.Error.__init__(self, value)
+        self.value = value
+        ctx.ui.error(value)
+
+basename = "qt6"
+
+prefix = "/%s" % get.defaultprefixDIR()
+libdir = "%s/lib" % prefix
+bindirQt6 = "%s/%s" % (libdir, basename)
+libexecdir = "%s/libexec" % prefix
+sysconfdir= "/etc"
+bindir = "%s/bin" % prefix
+includedir = "%s/include" % prefix
+
+# qt5 spesific variables
+
+headerdir = "%s/include/%s" % (prefix, basename)
+datadir = "%s/share/%s" % (prefix, basename)
+docdir = "/%s/%s" % (get.docDIR(), basename)
+archdatadir = "%s/%s" % (libdir, basename)
+mkspecsdir = "%s/%s/mkspecs" % (libdir, basename)
+examplesdir = "%s/%s/examples" % (libdir, basename)
+testdir = "%s/share/%s" % (prefix, basename)
+translationdir = "%s/translations" % datadir
+
+#Temporary bindir to avoid qt5 conflicts
+# qmake = "%s/qt-configure-module-qt6" % bindir
+qmake = "%s/qmake-qt6" % bindir
+
+
+def configure(parameters='', build_dir='build'):
+    """
+    Configures the project into the build directory with the parameters using meson.
+
+    Args:
+        parameters (str): Extra parameters for the command. Default is empty string.
+        build_dir (str): Build directory. Default is 'build'.
+
+    Examples:
+        >>> mesontools.configure()
+        >>> mesontools.configure('extra parameters')
+        >>> mesontools.configure('extra parameters', 'custom_build_dir')
+    """
+    default_parameters = ' '.join([
+                    '-DCMAKE_INSTALL_PREFIX=%s' % prefix,
+                    '-DCMAKE_C_FLAGS="%s"' % get.CFLAGS() ,
+                    '-DCMAKE_CXX_FLAGS="%s"' % get.CXXFLAGS(),
+                    '-DCMAKE_LD_FLAGS="%s"' % get.LDFLAGS(),
+                    '-DCMAKE_BUILD_TYPE=RelWithDebInfo' ,
+                    '-DINSTALL_BINDIR=%s' % bindirQt6,
+                    '-DINSTALL_INCLUDEDIR=%s' % headerdir,
+                    '-DINSTALL_ARCHDATADIR=%s' % archdatadir,
+                    '-DINSTALL_DOCDIR=%s' % docdir,
+                    '-DINSTALL_DATADIR=%s' % datadir,
+                    '-DINSTALL_MKSPECSDIR=%s' % mkspecsdir,
+                    '-DINSTALL_EXAMPLESDIR=%s' % examplesdir,
+                    '-DQT_FEATURE_libproxy=ON' ,
+                    '-DQT_FEATURE_vulkan=ON' ,
+                    '-DQT_FEATURE_system_freetype=ON' ,
+                    '-DQT_FEATURE_system_harfbuzz=ON' ,
+                    '-DQT_FEATURE_system_sqlite=ON' ,
+                    '-DQT_FEATURE_dbus_linked=ON' ,
+                    '-DCMAKE_MESSAGE_LOG_LEVEL=STATUS' ,
+                    '-DQT_FEATURE_openssl_linked=ON' ,
+                    # '-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON' ,
+    ])
+    if system('cmake -B %s -G Ninja %s %s' % (build_dir, default_parameters, parameters)):
+        raise ConfigureError(_('Configuration failed.'))
+
+
+def make(parameters='', build_dir='build'):
+    """
+    Builds the project into the build directory with the parameters using ninja. Instead of letting ninja
+    to detect number of cores, this function gets the number from PISI configurations.
+
+    Args:
+        parameters (str): Extra parameters for the command. Default is empty string.
+        build_dir (str): Build directory. Default is 'build'.
+
+    Examples:
+        >>> mesontools.build()
+        >>> mesontools.build('extra parameters')
+        >>> mesontools.build('extra parameters', 'custom_build_dir')
+    """
+    if system('ninja -C %s %s %s' % (build_dir, parameters, get.makeJOBS())):
+        raise CompileError(_('Make failed.'))
+
+
+def install(parameters='', build_dir='build'):
+    """
+    Installs the project to the destination directory.
+
+    Args:
+        parameters (str): Extra parameters for the command. Default is empty string.
+        build_dir (str): Build directory. Default is 'build'.
+
+    Examples:
+        >>> mesontools.install()
+        >>> mesontools.install('extra parameters')
+        >>> mesontools.install('extra parameters', 'custom_build_dir')
+    """
+    if system('DESTDIR=%s ninja -C %s %s install' % (get.installDIR(), build_dir, parameters, )):
+        raise InstallError(_('Install failed.'))
