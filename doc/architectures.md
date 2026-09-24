@@ -8,7 +8,7 @@ the architecture comes from one table, `pisi/archinfo.py`.
 
 | Name (canonical) | Aliases accepted | GNU host triplet | Kernel `ARCH=` | Kernel image | Architecture-bound build types |
 |---|---|---|---|---|---|
-| `x86_64` | `amd64`, `x86-64`, `x64` | `x86_64-pc-linux-gnu` | `x86_64` | `arch/x86/boot/bzImage` | `emul32` (32-bit multilib, `/usr/lib32`) |
+| `x86_64` | `amd64`, `x86-64`, `x64` | `x86_64-pc-linux-gnu` | `x86_64` | `arch/x86/boot/bzImage` | `emul32`, `_emul32` (32-bit multilib, `/usr/lib32`) |
 | `i686` | `i386`, `i486`, `i586` | `i686-pc-linux-gnu` | `i386` | `arch/x86/boot/bzImage` | `pae` |
 | `aarch64` | `arm64`, `armv8` | `aarch64-pc-linux-gnu` | `arm64` | `arch/arm64/boot/Image.gz` | none |
 
