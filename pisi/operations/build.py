@@ -228,6 +228,11 @@ class Builder:
 
         self.sourceArchives = pisi.sourcearchive.SourceArchives(self.spec)
 
+        # Before actions.py is loaded: some recipes of x86-only packages run
+        # x86-specific code at import time (e.g. read the installed kernel
+        # version), which would fail before an exclusion could be reported.
+        self.check_excluded_architecture()
+
         self.build_types = self.get_build_types()
 
         # Use an empty string for the default build
@@ -315,15 +320,19 @@ class Builder:
             return None
         return open(stateFile, "r").read()
 
-    def build(self):
-        """Build the package in one shot."""
-
+    def check_excluded_architecture(self):
+        """Raise ExcludedArchitectureException when <ExcludeArch> lists this
+        architecture. Aliases count too: arm64 excludes aarch64."""
         architecture = ctx.config.values.general.architecture
-        # Aliases count too: <ExcludeArch>arm64</ExcludeArch> excludes aarch64.
         if pisi.archinfo.excluded(architecture, self.spec.source.excludeArch):
             raise ExcludedArchitectureException(
                     _("pspec.xml avoids this package from building for '%s'")
                     % architecture)
+
+    def build(self):
+        """Build the package in one shot."""
+
+        self.check_excluded_architecture()
 
         ctx.ui.status(_("Building source package: %s")
                       % self.spec.source.name)
